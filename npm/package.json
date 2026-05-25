@@ -1,0 +1,56 @@
+{
+  "name": "@buble/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the Buble public API.",
+  "license": "MIT",
+  "author": "Buble AI",
+  "homepage": "https://buble.ai",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && node scripts/prepare-cjs.cjs",
+    "prepack": "npm run clean && npm run build",
+    "test": "vitest run",
+    "test:live": "NODE_OPTIONS='--dns-result-order=ipv4first' node scripts/live-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "buble",
+    "buble-ai",
+    "ai",
+    "sdk",
+    "image-generation",
+    "video-generation",
+    "chat"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}
