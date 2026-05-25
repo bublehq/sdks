@@ -12,7 +12,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | --- | --- | --- | --- | --- |
 | `@buble/sdk` | `npm install @buble/sdk` | Node.js 18+ | `npm/` | [npm README](npm/README.md) |
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
-| `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md) |
+| `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 
 ## Quick Start
 
@@ -134,6 +134,8 @@ func main() {
 
 The Go SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted.
 
+Go API documentation is generated from package comments and exported symbols. After a tagged release is indexed, it is available on [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go).
+
 ## Supported API Areas
 
 The SDKs mirror the public Buble API:
@@ -181,6 +183,13 @@ const models = await buble.mediaModels.list({ media_type: 'video' });
 models = client.media_models.list(media_type="video")
 ```
 
+```go
+models, err := client.MediaModels.List(ctx, "video")
+if err != nil {
+	log.Fatal(err)
+}
+```
+
 The response contains model keys, supported modes, required inputs, and accepted parameters.
 
 ### Upload Source Media
@@ -202,6 +211,19 @@ uploaded = client.files.upload(
     model="google/nano-banana",
     mode="image_to_image",
 )
+```
+
+```go
+uploaded, err := client.Files.Upload(
+	ctx,
+	buble.FileFromPath("./reference.png"),
+	buble.WithFileType("image"),
+	buble.WithUploadModel("google/nano-banana"),
+	buble.WithUploadMode("image_to_image"),
+)
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
@@ -227,6 +249,17 @@ task = client.apps.generations.create(
 )
 ```
 
+```go
+task, err := client.Apps.Generations.Create(ctx, "video-background-remover", map[string]any{
+	"source_video":            []string{"https://example.com/source.mp4"},
+	"refine_foreground_edges": true,
+	"subject_is_person":       true,
+})
+if err != nil {
+	log.Fatal(err)
+}
+```
+
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
 
 ### Stream Chat Output
@@ -250,6 +283,26 @@ for text in client.chat.completions.stream_text(
     messages=[{"role": "user", "content": "Write a short launch summary."}],
 ):
     print(text, end="")
+```
+
+```go
+stream, err := client.Chat.Completions.Stream(ctx, buble.ChatRequest{
+	"model": "openai/gpt-5.5",
+	"messages": []any{
+		map[string]any{"role": "user", "content": "Write a short launch summary."},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}
+defer stream.Close()
+
+for stream.Next() {
+	fmt.Print(stream.Text())
+}
+if err := stream.Err(); err != nil {
+	log.Fatal(err)
+}
 ```
 
 ## Repository Layout
@@ -324,4 +377,4 @@ BUBLE_API_KEY=sk_... go run ./cmd/live-smoke
 
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE` and `python/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, and `go/LICENSE`.
