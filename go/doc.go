@@ -1,5 +1,9 @@
 // Package buble provides a server-side Go client for the Buble public API.
 //
+// Buble is available at [Buble]. The [Buble API documentation] describes the
+// supported endpoints, request shapes, authentication model, and model-specific
+// parameters.
+//
 // The client supports media model discovery, file uploads, asynchronous image
 // and video generation, preconfigured app workflows, and chat model calls
 // through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
@@ -13,4 +17,7 @@
 // used without requiring an SDK release.
 //
 // API keys are server credentials. Do not expose them in client-side code.
+//
+// [Buble]: https://buble.ai/
+// [Buble API documentation]: https://buble.ai/docs
 package buble
