@@ -6,12 +6,13 @@ This repository contains the SDKs for calling Buble from server-side application
 
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
-## Published Packages
+## SDK Packages
 
 | Package | Install | Runtime | Source | Guide |
 | --- | --- | --- | --- | --- |
 | `@buble/sdk` | `npm install @buble/sdk` | Node.js 18+ | `npm/` | [npm README](npm/README.md) |
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
+| `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md) |
 
 ## Quick Start
 
@@ -82,6 +83,56 @@ print(result["data"]["result"]["images"][0]["url"])
 ```
 
 The Python SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted.
+
+### Go
+
+Install:
+
+```bash
+go get github.com/bublehq/sdks/go
+```
+
+Quick start:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	buble "github.com/bublehq/sdks/go"
+)
+
+func main() {
+	ctx := context.Background()
+	client := buble.NewClient()
+
+	task, err := client.Generations.Create(ctx, &buble.CreateGenerationRequest{
+		Model:  "google/nano-banana",
+		Mode:   "text_to_image",
+		Prompt: "A cinematic product photo of a matte black espresso cup",
+		Params: map[string]any{
+			"aspect_ratio":  "1:1",
+			"output_format": "png",
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result, err := client.Generations.Wait(ctx, task.Data.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if result.Data.Result != nil && len(result.Data.Result.Images) > 0 {
+		fmt.Println(result.Data.Result.Images[0].URL)
+	}
+}
+```
+
+The Go SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted.
 
 ## Supported API Areas
 
@@ -210,6 +261,10 @@ for text in client.chat.completions.stream_text(
 │   ├── tests/
 │   ├── examples/
 │   └── docs/
+├── go/
+│   ├── *.go
+│   ├── examples/
+│   └── cmd/live-smoke/
 └── python/
     ├── src/buble_ai/
     ├── tests/
@@ -240,6 +295,14 @@ python -m build
 python -m twine check dist/*
 ```
 
+Go:
+
+```bash
+cd go
+go test ./...
+go vet ./...
+```
+
 ## Live Smoke Tests
 
 Live smoke tests require `BUBLE_API_KEY`. They call discovery and error-handling paths and are intended to avoid creating billable generation tasks.
@@ -252,6 +315,11 @@ BUBLE_API_KEY=sk_... npm run test:live
 ```bash
 cd python
 BUBLE_API_KEY=sk_... python scripts/live_smoke.py
+```
+
+```bash
+cd go
+BUBLE_API_KEY=sk_... go run ./cmd/live-smoke
 ```
 
 ## License
