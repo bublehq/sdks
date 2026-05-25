@@ -13,6 +13,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `@buble/sdk` | `npm install @buble/sdk` | Node.js 18+ | `npm/` | [npm README](npm/README.md) |
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
+| `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 
 ## Quick Start
 
@@ -136,6 +137,53 @@ The Go SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment 
 
 Go API documentation is generated from package comments and exported symbols. After a tagged release is indexed, it is available on [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go).
 
+### Java
+
+Install with Maven:
+
+```xml
+<dependency>
+  <groupId>ai.buble</groupId>
+  <artifactId>buble-sdk</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
+
+Or Gradle:
+
+```gradle
+implementation("ai.buble:buble-sdk:0.1.0")
+```
+
+Quick start:
+
+```java
+import ai.buble.sdk.BubleClient;
+import ai.buble.sdk.Envelope;
+import ai.buble.sdk.generations.CreateGenerationRequest;
+import ai.buble.sdk.generations.GenerationTask;
+
+public class Main {
+    public static void main(String[] args) {
+        BubleClient client = BubleClient.fromEnv();
+
+        Envelope<GenerationTask> task = client.generations().create(
+                CreateGenerationRequest.builder()
+                        .model("google/nano-banana")
+                        .mode("text_to_image")
+                        .prompt("A cinematic product photo of a matte black espresso cup")
+                        .param("aspect_ratio", "1:1")
+                        .param("output_format", "png")
+                        .build());
+
+        Envelope<GenerationTask> result = client.generations().wait(task.getData().getId());
+        System.out.println(result.getData().getResult().getImages().get(0).getUrl());
+    }
+}
+```
+
+The Java SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for Maven Central publication with a release profile that produces the main JAR, sources JAR, Javadoc JAR, and GPG signatures. MVNRepository will index the artifact after Maven Central publication and indexing.
+
 ## Supported API Areas
 
 The SDKs mirror the public Buble API:
@@ -166,6 +214,7 @@ Use the discovery endpoints as the source of truth:
 - `mediaModels.list()` / `media_models.list()` for media model keys, modes, input requirements, and parameters.
 - `apps.list()` and `apps.retrieve()` for app ids and input parameters.
 - `chat.models.list()` for available chat models and capabilities.
+- Java equivalents are `client.mediaModels().list(...)`, `client.apps().list()`, `client.apps().retrieve(...)`, and `client.chat().models().list()`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -188,6 +237,10 @@ models, err := client.MediaModels.List(ctx, "video")
 if err != nil {
 	log.Fatal(err)
 }
+```
+
+```java
+Envelope<List<MediaModel>> models = client.mediaModels().list("video");
 ```
 
 The response contains model keys, supported modes, required inputs, and accepted parameters.
@@ -226,6 +279,16 @@ if err != nil {
 }
 ```
 
+```java
+Envelope<UploadedFile> uploaded = client.files().upload(
+        FileUpload.fromPath(Path.of("reference.png")),
+        UploadOptions.builder()
+                .fileType("image")
+                .model("google/nano-banana")
+                .mode("image_to_image")
+                .build());
+```
+
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
 
 ### Run App Workflows
@@ -258,6 +321,16 @@ task, err := client.Apps.Generations.Create(ctx, "video-background-remover", map
 if err != nil {
 	log.Fatal(err)
 }
+```
+
+```java
+Envelope<AppGenerationTask> task = client.apps().generations().create(
+        "video-background-remover",
+        Map.of(
+                "source_video", List.of("https://example.com/source.mp4"),
+                "refine_foreground_edges", true,
+                "subject_is_person", true
+        ));
 ```
 
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
@@ -305,6 +378,17 @@ if err := stream.Err(); err != nil {
 }
 ```
 
+```java
+try (BubleStream stream = client.chat().completions().stream(Map.of(
+        "model", "openai/gpt-5.5",
+        "messages", List.of(Map.of("role", "user", "content", "Write a short launch summary."))
+))) {
+    while (stream.next()) {
+        System.out.print(stream.text());
+    }
+}
+```
+
 ## Repository Layout
 
 ```txt
@@ -318,6 +402,10 @@ if err := stream.Err(); err != nil {
 │   ├── *.go
 │   ├── examples/
 │   └── cmd/live-smoke/
+├── java/
+│   ├── src/
+│   ├── examples/
+│   └── docs/
 └── python/
     ├── src/buble_ai/
     ├── tests/
@@ -356,6 +444,37 @@ go test ./...
 go vet ./...
 ```
 
+Java:
+
+```bash
+cd java
+mvn test
+mvn verify
+mvn -P release -Dgpg.skip=true verify
+```
+
+Use the release profile without `-Dgpg.skip=true` only when GPG signing is configured and you are preparing a Maven Central release.
+
+## Java Publishing
+
+The Java SDK is published through Maven Central, not directly through MVNRepository. MVNRepository is an indexing site and will show `ai.buble:buble-sdk` after Maven Central publishes and indexes the artifact.
+
+Before the first Java release:
+
+- Verify the `ai.buble` namespace in Sonatype Central Portal.
+- Configure a Central Portal token in `~/.m2/settings.xml` with server id `central`.
+- Configure GPG signing with a public key available to Maven Central.
+- Run `mvn clean verify` and `mvn -P release clean verify`.
+
+Release command:
+
+```bash
+cd java
+mvn -P release clean deploy
+```
+
+The Java `pom.xml` uses `autoPublish=false`, so review the deployment in Central Portal before publishing it. Maven Central versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
+
 ## Live Smoke Tests
 
 Live smoke tests require `BUBLE_API_KEY`. They call discovery and error-handling paths and are intended to avoid creating billable generation tasks.
@@ -377,4 +496,4 @@ BUBLE_API_KEY=sk_... go run ./cmd/live-smoke
 
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, and `go/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, and `java/LICENSE`.
