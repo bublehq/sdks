@@ -4,6 +4,8 @@ Official SDKs for the [Buble public API](https://buble.ai/docs).
 
 This repository contains the SDKs for calling Buble from server-side applications. The SDKs support media model discovery, file uploads, asynchronous image and video generation, preconfigured Buble app workflows, and chat model calls through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
 
+The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Java, .NET, and PHP: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
+
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
 ## SDK Packages
@@ -14,8 +16,8 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
-| `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) after publication |
-| `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
+| `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
+| `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ with `ext-curl` and `ext-json` | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
 
 ## Quick Start
 
@@ -194,6 +196,12 @@ Install:
 dotnet add package Buble.SDK --version 0.1.2
 ```
 
+Package Manager:
+
+```powershell
+Install-Package Buble.SDK -Version 0.1.2
+```
+
 Quick start:
 
 ```csharp
@@ -213,7 +221,9 @@ var result = await client.Generations.WaitAsync(task!.Data!.Id!);
 Console.WriteLine(result.Data?.Result?.Images?[0].Url);
 ```
 
-The .NET SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for NuGet.org publication with package metadata, README inclusion, XML documentation, and symbol package generation.
+The .NET SDK exposes the `Buble.Sdk` namespace, targets `netstandard2.0` and `net8.0`, and also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. `BubleClientOptions` supports custom API keys, base URLs, timeouts, and externally managed `HttpClient` instances for ASP.NET Core or other dependency-injection setups.
+
+NuGet packaging is configured in `dotnet/src/Buble.Sdk/Buble.Sdk.csproj` with package metadata, README inclusion, XML documentation, and `.snupkg` symbol package generation.
 
 ### PHP
 
@@ -246,7 +256,9 @@ $result = $client->generations()->wait($task['data']['id']);
 echo $result['data']['result']['images'][0]['url'] . PHP_EOL;
 ```
 
-The PHP SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for Packagist publication through a PHP-only split repository.
+The PHP SDK exposes the `Buble\` namespace, requires PHP 8.2+, `ext-curl`, and `ext-json`, and also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. The client accepts `BubleClientOptions` or an options array for explicit server-side configuration.
+
+Packagist publication should use a PHP-only split repository whose root is the contents of `php/`. Do not submit the monorepo root to Packagist.
 
 ## Supported API Areas
 
@@ -611,8 +623,8 @@ Use the release profile without `-Dgpg.skip=true` only when GPG signing is confi
 
 ```bash
 cd dotnet
-dotnet restore
-dotnet test -c Release
+dotnet restore Buble.Sdk.sln
+dotnet test Buble.Sdk.sln -c Release
 dotnet pack src/Buble.Sdk/Buble.Sdk.csproj -c Release -o artifacts
 ```
 
@@ -654,26 +666,35 @@ The .NET SDK is published directly to NuGet.org as `Buble.SDK`.
 Before the first .NET release:
 
 - Ensure the `Buble.SDK` package ID is available or owned by the Buble NuGet.org account.
+- If publishing under the Buble NuGet organization, reserve or transfer the `Buble.SDK` package ID to that organization before pushing new versions.
 - Create a NuGet.org API key with permission to push `Buble.SDK`.
-- Run `dotnet test -c Release` and inspect the package with `dotnet pack`.
+- Run the release build and inspect the generated `.nupkg` and `.snupkg`.
 
 Release command:
 
 ```bash
 cd dotnet
+dotnet test Buble.Sdk.sln -c Release
 dotnet pack src/Buble.Sdk/Buble.Sdk.csproj -c Release -o artifacts
 dotnet nuget push artifacts/Buble.SDK.0.1.2.nupkg \
   --api-key "$NUGET_API_KEY" \
   --source https://api.nuget.org/v3/index.json
 ```
 
-The project also produces `artifacts/Buble.SDK.0.1.2.snupkg`. If your NuGet client does not publish the symbol package together with the main package, push the `.snupkg` to the same source. NuGet package versions are immutable; after `0.1.2` is published, fixes must use a new version such as `0.1.3`.
+The package metadata points users to `https://buble.ai/` as the project website and includes the package README from `dotnet/README.md`. The project also produces `artifacts/Buble.SDK.0.1.2.snupkg`. If your NuGet client does not publish the symbol package together with the main package, push the `.snupkg` to the same source. NuGet package versions are immutable; after `0.1.2` is published, fixes must use a new version such as `0.1.3`.
 
 ## PHP Publishing
 
 The PHP SDK is published to Packagist as `buble/sdk`.
 
-Because this repository is a multi-language monorepo, publish the PHP SDK through a PHP-only split repository whose root contains the contents of `php/`. Do not submit this monorepo root to Packagist.
+Because this repository is a multi-language monorepo, publish the PHP SDK through a PHP-only split repository whose root contains the contents of `php/`. Do not submit this monorepo root to Packagist. The PHP package intentionally omits a `version` field from `composer.json`; Composer and Packagist derive versions from Git tags.
+
+Before the first PHP release:
+
+- Create or verify the PHP-only repository `https://github.com/bublehq/php-sdk`.
+- Ensure that repository root contains `composer.json`, `src/`, `README.md`, `LICENSE`, `examples/`, and `docs/` after sync.
+- Submit `https://github.com/bublehq/php-sdk` to Packagist, not `https://github.com/bublehq/sdks`.
+- Configure the Packagist GitHub hook or GitHub App access so new tags are indexed automatically.
 
 Release flow:
 
@@ -689,7 +710,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Submit `https://github.com/bublehq/php-sdk` to Packagist and configure the GitHub/Packagist hook so new tags are indexed automatically. Composer package versions are derived from Git tags; do not add a `version` field to `composer.json`.
+When using the recommended GitHub Actions split flow, tag releases in the monorepo with a PHP-specific prefix such as `php-v0.1.0`; the release workflow should push `v0.1.0` to the PHP-only repository for Packagist. Composer package versions are immutable after publication in practice because consumers can lock them, so publish fixes with a new version tag such as `v0.1.1`.
 
 ## Live Smoke Tests
 
