@@ -254,7 +254,20 @@ cd ruby
 bundle exec rake test
 bundle exec rubocop
 gem build buble.gemspec
-gem push buble-0.1.0.gem
+```
+
+Publication is handled by the monorepo `Release Ruby SDK` GitHub Actions workflow. Configure RubyGems Trusted Publishing for:
+
+- Repository owner: `bublehq`
+- Repository name: `sdks`
+- Workflow filename: `release-ruby-sdk.yml`
+- Environment: `release`
+
+Then publish from the monorepo with:
+
+```bash
+git tag ruby-v0.1.0
+git push origin ruby-v0.1.0
 ```
 
 RubyGems versions are immutable. After `0.1.0` is published, fixes must use a new version such as `0.1.1`.

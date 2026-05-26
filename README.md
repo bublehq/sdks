@@ -805,29 +805,32 @@ Before the first Ruby release:
 
 - Confirm `buble` is still available on RubyGems.
 - Create or sign in to the Buble RubyGems.org account.
-- Configure a RubyGems API key with permission to push `buble`, or configure RubyGems Trusted Publishing.
+- Configure RubyGems Trusted Publishing for `buble`.
+  - Repository owner: `bublehq`
+  - Repository name: `sdks`
+  - Workflow filename: `release-ruby-sdk.yml`
+  - Environment: `release`
 - Run tests, linting, and `gem build`.
 
-Release command:
+Local verification:
 
 ```bash
 cd ruby
 bundle exec rake test
 bundle exec rubocop
 gem build buble.gemspec
-gem push buble-0.1.0.gem
 ```
 
 RubyGems versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
 
-The release workflow also supports monorepo tags with a Ruby-specific prefix:
+Publish through the release workflow with a Ruby-specific monorepo tag:
 
 ```bash
 git tag ruby-v0.1.0
 git push origin ruby-v0.1.0
 ```
 
-The workflow expects a GitHub Actions secret named `RUBYGEMS_API_KEY` with permission to push the `buble` gem.
+The workflow uses RubyGems Trusted Publishing through GitHub OIDC. It does not require a `RUBYGEMS_API_KEY` secret.
 
 ## Live Smoke Tests
 

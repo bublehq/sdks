@@ -14,12 +14,14 @@ jobs:
   release:
     name: Build and publish Ruby gem
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Checkout monorepo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve release version
         id: version
@@ -59,9 +61,11 @@ jobs:
         working-directory: ruby
         run: gem build buble.gemspec
 
+      - name: Configure RubyGems credentials
+        uses: rubygems/configure-rubygems-credentials@v2.0.0
+
       - name: Push gem to RubyGems
         working-directory: ruby
         env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: gem push "buble-${RELEASE_VERSION}.gem"
