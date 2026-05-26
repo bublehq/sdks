@@ -111,7 +111,12 @@ final class CurlTransport implements TransportInterface
         }
 
         try {
-            $status = $this->statusFromResponseHeaders($http_response_header);
+            $responseHeaders = $this->lastResponseHeaders();
+            if ($responseHeaders === [] && PHP_VERSION_ID < 80500) {
+                $responseHeaders = $this->responseHeadersFromScope(compact('http_response_header'));
+            }
+
+            $status = $this->statusFromResponseHeaders($responseHeaders);
             if ($status < 200 || $status >= 300) {
                 $bodyText = stream_get_contents($stream);
                 throw $this->apiException($status, $bodyText === false ? '' : $bodyText);
@@ -150,7 +155,6 @@ final class CurlTransport implements TransportInterface
             $this->throwCurlError($ch);
         }
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
 
         return [$status, (string) $response];
     }
@@ -290,7 +294,6 @@ final class CurlTransport implements TransportInterface
     {
         $errno = curl_errno($ch);
         $message = curl_error($ch);
-        curl_close($ch);
 
         if ($errno === CURLE_OPERATION_TIMEDOUT) {
             throw new TimeoutException(
@@ -346,5 +349,46 @@ final class CurlTransport implements TransportInterface
         }
 
         return 0;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lastResponseHeaders(): array
+    {
+        if (function_exists('http_get_last_response_headers')) {
+            $headers = http_get_last_response_headers();
+
+            return is_array($headers) ? $this->stringList($headers) : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<string, mixed> $scope
+     * @return list<string>
+     */
+    private function responseHeadersFromScope(array $scope): array
+    {
+        $headers = $scope['http_response_header'] ?? [];
+
+        return is_array($headers) ? $this->stringList($headers) : [];
+    }
+
+    /**
+     * @param array<mixed> $headers
+     * @return list<string>
+     */
+    private function stringList(array $headers): array
+    {
+        $out = [];
+        foreach ($headers as $header) {
+            if (is_string($header)) {
+                $out[] = $header;
+            }
+        }
+
+        return $out;
     }
 }
