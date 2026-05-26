@@ -65,6 +65,11 @@ jobs:
         run: |
           git subtree split --prefix=php -b php-sdk-main
 
+      - name: Fetch PHP SDK remote
+        run: |
+          git remote add php-sdk git@github.com:bublehq/php-sdk.git
+          git fetch php-sdk main
+
       - name: Push PHP SDK repository
         run: |
-          git push git@github.com:bublehq/php-sdk.git php-sdk-main:main --force-with-lease
+          git push php-sdk php-sdk-main:main --force-with-lease=refs/heads/main:refs/remotes/php-sdk/main

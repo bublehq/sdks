@@ -77,11 +77,16 @@ jobs:
         run: |
           git subtree split --prefix=php -b php-sdk-release
 
+      - name: Fetch PHP SDK remote
+        run: |
+          git remote add php-sdk git@github.com:bublehq/php-sdk.git
+          git fetch php-sdk main
+
       - name: Push PHP SDK main
         run: |
-          git push git@github.com:bublehq/php-sdk.git php-sdk-release:main --force-with-lease
+          git push php-sdk php-sdk-release:main --force-with-lease=refs/heads/main:refs/remotes/php-sdk/main
 
       - name: Push PHP SDK version tag
         run: |
           git tag -f "${{ steps.version.outputs.tag }}" php-sdk-release
-          git push git@github.com:bublehq/php-sdk.git "${{ steps.version.outputs.tag }}" --force
+          git push php-sdk "${{ steps.version.outputs.tag }}" --force
