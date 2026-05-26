@@ -4,7 +4,7 @@ Official SDKs for the [Buble public API](https://buble.ai/docs).
 
 This repository contains the SDKs for calling Buble from server-side applications. The SDKs support media model discovery, file uploads, asynchronous image and video generation, preconfigured Buble app workflows, and chat model calls through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
 
-The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Java, .NET, and PHP: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
+The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
 
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
@@ -18,6 +18,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
 | `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ with `ext-curl` and `ext-json` | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
+| `buble` | `gem install buble` | Ruby 3.3+ | `ruby/` | [Ruby README](ruby/README.md), [RubyGems](https://rubygems.org/gems/buble) after publication |
 
 ## Quick Start
 
@@ -260,6 +261,41 @@ The PHP SDK exposes the `Buble\` namespace, requires PHP 8.2+, `ext-curl`, and `
 
 Packagist publication should use a PHP-only split repository whose root is the contents of `php/`. Do not submit the monorepo root to Packagist.
 
+### Ruby
+
+Install:
+
+```bash
+gem install buble
+```
+
+Bundler:
+
+```ruby
+gem "buble"
+```
+
+Quick start:
+
+```ruby
+require "buble"
+
+client = Buble::Client.new
+
+task = client.generations.create(
+  model: "google/nano-banana",
+  mode: "text_to_image",
+  prompt: "A cinematic product photo of a matte black espresso cup",
+  aspect_ratio: "1:1",
+  output_format: "png"
+)
+
+result = client.generations.wait(task.dig("data", "id"))
+puts result.dig("data", "result", "images", 0, "url")
+```
+
+The Ruby SDK exposes the `Buble` namespace, requires Ruby 3.3+, has no runtime dependencies outside the Ruby standard library, and also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted.
+
 ## Supported API Areas
 
 The SDKs mirror the public Buble API:
@@ -293,6 +329,7 @@ Use the discovery endpoints as the source of truth:
 - Java equivalents are `client.mediaModels().list(...)`, `client.apps().list()`, `client.apps().retrieve(...)`, and `client.chat().models().list()`.
 - .NET equivalents are `client.MediaModels.ListAsync(...)`, `client.Apps.ListAsync()`, `client.Apps.RetrieveAsync(...)`, and `client.Chat.Models.ListAsync()`.
 - PHP equivalents are `$client->mediaModels()->list(...)`, `$client->apps()->list()`, `$client->apps()->retrieve(...)`, and `$client->chat()->models()->list()`.
+- Ruby equivalents are `client.media_models.list(...)`, `client.apps.list`, `client.apps.retrieve(...)`, and `client.chat.models.list`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -327,6 +364,10 @@ var models = await client.MediaModels.ListAsync(mediaType: "video");
 
 ```php
 $models = $client->mediaModels()->list(mediaType: 'video');
+```
+
+```ruby
+models = client.media_models.list(media_type: "video")
 ```
 
 The response contains model keys, supported modes, required inputs, and accepted parameters.
@@ -393,6 +434,15 @@ $uploaded = $client->files()->upload(
 );
 ```
 
+```ruby
+uploaded = client.files.upload(
+  Buble::FileUpload.from_path("reference.png", content_type: "image/png"),
+  file_type: "image",
+  model: "google/nano-banana",
+  mode: "image_to_image"
+)
+```
+
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
 
 ### Run App Workflows
@@ -454,6 +504,14 @@ $task = $client->apps()->generations()->create('video-background-remover', [
     'refine_foreground_edges' => true,
     'subject_is_person' => true,
 ]);
+```
+
+```ruby
+task = client.apps.generations.create("video-background-remover", {
+  "source_video" => ["https://example.com/source.mp4"],
+  "refine_foreground_edges" => true,
+  "subject_is_person" => true
+})
 ```
 
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
@@ -541,6 +599,17 @@ foreach ($client->chat()->completions()->streamText([
 }
 ```
 
+```ruby
+client.chat.completions.stream_text(
+  model: "openai/gpt-5.5",
+  messages: [
+    { role: "user", content: "Write a short launch summary." }
+  ]
+).each do |text|
+  print text
+end
+```
+
 ## Repository Layout
 
 ```txt
@@ -567,6 +636,12 @@ foreach ($client->chat()->completions()->streamText([
 ├── php/
 │   ├── src/
 │   ├── tests/
+│   ├── examples/
+│   ├── tools/
+│   └── docs/
+├── ruby/
+│   ├── lib/
+│   ├── test/
 │   ├── examples/
 │   ├── tools/
 │   └── docs/
@@ -637,6 +712,16 @@ composer install
 composer test
 composer analyse
 composer cs
+```
+
+Ruby:
+
+```bash
+cd ruby
+bundle install
+bundle exec rake test
+bundle exec rubocop
+gem build buble.gemspec
 ```
 
 ## Java Publishing
@@ -712,6 +797,38 @@ git push origin v0.1.0
 
 When using the recommended GitHub Actions split flow, tag releases in the monorepo with a PHP-specific prefix such as `php-v0.1.0`; the release workflow should push `v0.1.0` to the PHP-only repository for Packagist. Composer package versions are immutable after publication in practice because consumers can lock them, so publish fixes with a new version tag such as `v0.1.1`.
 
+## Ruby Publishing
+
+The Ruby SDK is published directly to RubyGems as `buble`.
+
+Before the first Ruby release:
+
+- Confirm `buble` is still available on RubyGems.
+- Create or sign in to the Buble RubyGems.org account.
+- Configure a RubyGems API key with permission to push `buble`, or configure RubyGems Trusted Publishing.
+- Run tests, linting, and `gem build`.
+
+Release command:
+
+```bash
+cd ruby
+bundle exec rake test
+bundle exec rubocop
+gem build buble.gemspec
+gem push buble-0.1.0.gem
+```
+
+RubyGems versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
+
+The release workflow also supports monorepo tags with a Ruby-specific prefix:
+
+```bash
+git tag ruby-v0.1.0
+git push origin ruby-v0.1.0
+```
+
+The workflow expects a GitHub Actions secret named `RUBYGEMS_API_KEY` with permission to push the `buble` gem.
+
 ## Live Smoke Tests
 
 Live smoke tests require `BUBLE_API_KEY`. They call discovery and error-handling paths and are intended to avoid creating billable generation tasks.
@@ -741,6 +858,11 @@ cd php
 BUBLE_API_KEY=sk_... php tools/live-smoke.php
 ```
 
+```bash
+cd ruby
+BUBLE_API_KEY=sk_... ruby -Ilib tools/live_smoke.rb
+```
+
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, and `php/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.

@@ -1,0 +1,67 @@
+name: Release Ruby SDK
+
+on:
+  push:
+    tags:
+      - "ruby-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 0.1.0"
+        required: true
+
+jobs:
+  release:
+    name: Build and publish Ruby gem
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#ruby-v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install dependencies
+        working-directory: ruby
+        run: bundle install
+
+      - name: Verify version
+        working-directory: ruby
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ruby -Ilib -e 'require "buble"; abort "expected #{ENV.fetch("RELEASE_VERSION")}, got #{Buble::VERSION}" unless Buble::VERSION == ENV.fetch("RELEASE_VERSION")'
+
+      - name: Run tests
+        working-directory: ruby
+        run: bundle exec rake test
+
+      - name: Run RuboCop
+        working-directory: ruby
+        run: bundle exec rubocop
+
+      - name: Build gem
+        working-directory: ruby
+        run: gem build buble.gemspec
+
+      - name: Push gem to RubyGems
+        working-directory: ruby
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: gem push "buble-${RELEASE_VERSION}.gem"

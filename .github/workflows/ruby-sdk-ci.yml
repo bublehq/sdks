@@ -1,0 +1,48 @@
+name: Ruby SDK CI
+
+on:
+  push:
+    paths:
+      - "ruby/**"
+      - ".github/workflows/ruby-sdk-ci.yml"
+  pull_request:
+    paths:
+      - "ruby/**"
+      - ".github/workflows/ruby-sdk-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Ruby ${{ matrix.ruby }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby:
+          - "3.3"
+          - "3.4"
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+
+      - name: Install dependencies
+        working-directory: ruby
+        run: bundle install
+
+      - name: Run tests
+        working-directory: ruby
+        run: bundle exec rake test
+
+      - name: Run RuboCop
+        working-directory: ruby
+        run: bundle exec rubocop
+
+      - name: Build gem
+        working-directory: ruby
+        run: gem build buble.gemspec
