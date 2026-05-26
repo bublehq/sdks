@@ -12,8 +12,8 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 
 | Package | Install | Runtime | Source | Guide |
 | --- | --- | --- | --- | --- |
-| `@buble/sdk` | `npm install @buble/sdk` | Node.js 18+ | `npm/` | [npm README](npm/README.md) |
-| `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
+| `@buble/sdk` | `npm install @buble/sdk` | Node.js 18+ | `npm/` | [npm README](npm/README.md), [npm](https://www.npmjs.com/package/@buble/sdk) |
+| `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md), [PyPI](https://pypi.org/project/buble-ai/) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
