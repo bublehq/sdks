@@ -1,0 +1,53 @@
+name: Rust SDK CI
+
+on:
+  push:
+    paths:
+      - "rust/**"
+      - ".github/workflows/rust-sdk-ci.yml"
+  pull_request:
+    paths:
+      - "rust/**"
+      - ".github/workflows/rust-sdk-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Rust SDK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Check formatting
+        working-directory: rust
+        run: cargo fmt --check
+
+      - name: Run Clippy
+        working-directory: rust
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        working-directory: rust
+        run: cargo test --all-features
+
+      - name: Build docs
+        working-directory: rust
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --no-deps --all-features
+
+      - name: Package crate
+        working-directory: rust
+        run: cargo package
