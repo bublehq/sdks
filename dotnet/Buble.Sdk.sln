@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Buble.Sdk", "src\Buble.Sdk\Buble.Sdk.csproj", "{6FE3A972-627B-48A0-8F68-6F4A86C072AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Buble.Sdk.Tests", "tests\Buble.Sdk.Tests\Buble.Sdk.Tests.csproj", "{FD7E2F2C-2198-419C-9E33-08017D7C7928}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Buble.Sdk.LiveSmoke", "tools\Buble.Sdk.LiveSmoke\Buble.Sdk.LiveSmoke.csproj", "{31FF9D96-02FC-4A3D-AC08-1B3C7F210065}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6FE3A972-627B-48A0-8F68-6F4A86C072AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FE3A972-627B-48A0-8F68-6F4A86C072AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FE3A972-627B-48A0-8F68-6F4A86C072AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FE3A972-627B-48A0-8F68-6F4A86C072AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD7E2F2C-2198-419C-9E33-08017D7C7928}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD7E2F2C-2198-419C-9E33-08017D7C7928}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD7E2F2C-2198-419C-9E33-08017D7C7928}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD7E2F2C-2198-419C-9E33-08017D7C7928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31FF9D96-02FC-4A3D-AC08-1B3C7F210065}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31FF9D96-02FC-4A3D-AC08-1B3C7F210065}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31FF9D96-02FC-4A3D-AC08-1B3C7F210065}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31FF9D96-02FC-4A3D-AC08-1B3C7F210065}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

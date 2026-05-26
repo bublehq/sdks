@@ -14,6 +14,8 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
+| `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) after publication |
+| `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
 
 ## Quick Start
 
@@ -184,6 +186,68 @@ public class Main {
 
 The Java SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for Maven Central publication with a release profile that produces the main JAR, sources JAR, Javadoc JAR, and GPG signatures. MVNRepository will index the artifact after Maven Central publication and indexing.
 
+### .NET
+
+Install:
+
+```bash
+dotnet add package Buble.SDK --version 0.1.2
+```
+
+Quick start:
+
+```csharp
+using Buble.Sdk;
+using Buble.Sdk.Generations;
+
+using var client = BubleClient.FromEnv();
+
+var task = await client.Generations.CreateAsync(new CreateGenerationRequest
+{
+    Model = "google/nano-banana",
+    Mode = "text_to_image",
+    Prompt = "A cinematic product photo of a matte black espresso cup"
+}.WithParam("aspect_ratio", "1:1").WithParam("output_format", "png"));
+
+var result = await client.Generations.WaitAsync(task!.Data!.Id!);
+Console.WriteLine(result.Data?.Result?.Images?[0].Url);
+```
+
+The .NET SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for NuGet.org publication with package metadata, README inclusion, XML documentation, and symbol package generation.
+
+### PHP
+
+Install:
+
+```bash
+composer require buble/sdk
+```
+
+Quick start:
+
+```php
+<?php
+
+use Buble\BubleClient;
+use Buble\Generations\CreateGenerationRequest;
+
+$client = BubleClient::fromEnv();
+
+$task = $client->generations()->create(
+    CreateGenerationRequest::make(
+        model: 'google/nano-banana',
+        mode: 'text_to_image',
+        prompt: 'A cinematic product photo of a matte black espresso cup',
+    )->withParam('aspect_ratio', '1:1')
+     ->withParam('output_format', 'png')
+);
+
+$result = $client->generations()->wait($task['data']['id']);
+echo $result['data']['result']['images'][0]['url'] . PHP_EOL;
+```
+
+The PHP SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It is configured for Packagist publication through a PHP-only split repository.
+
 ## Supported API Areas
 
 The SDKs mirror the public Buble API:
@@ -215,6 +279,8 @@ Use the discovery endpoints as the source of truth:
 - `apps.list()` and `apps.retrieve()` for app ids and input parameters.
 - `chat.models.list()` for available chat models and capabilities.
 - Java equivalents are `client.mediaModels().list(...)`, `client.apps().list()`, `client.apps().retrieve(...)`, and `client.chat().models().list()`.
+- .NET equivalents are `client.MediaModels.ListAsync(...)`, `client.Apps.ListAsync()`, `client.Apps.RetrieveAsync(...)`, and `client.Chat.Models.ListAsync()`.
+- PHP equivalents are `$client->mediaModels()->list(...)`, `$client->apps()->list()`, `$client->apps()->retrieve(...)`, and `$client->chat()->models()->list()`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -241,6 +307,14 @@ if err != nil {
 
 ```java
 Envelope<List<MediaModel>> models = client.mediaModels().list("video");
+```
+
+```csharp
+var models = await client.MediaModels.ListAsync(mediaType: "video");
+```
+
+```php
+$models = $client->mediaModels()->list(mediaType: 'video');
 ```
 
 The response contains model keys, supported modes, required inputs, and accepted parameters.
@@ -289,6 +363,24 @@ Envelope<UploadedFile> uploaded = client.files().upload(
                 .build());
 ```
 
+```csharp
+var uploaded = await client.Files.UploadAsync(
+    FileUpload.FromPath("reference.png", "image/png"),
+    new UploadOptions
+    {
+        FileType = "image",
+        Model = "google/nano-banana",
+        Mode = "image_to_image"
+    });
+```
+
+```php
+$uploaded = $client->files()->upload(
+    FileUpload::fromPath('reference.png', 'image/png'),
+    new UploadOptions(fileType: 'image', model: 'google/nano-banana', mode: 'image_to_image')
+);
+```
+
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
 
 ### Run App Workflows
@@ -331,6 +423,25 @@ Envelope<AppGenerationTask> task = client.apps().generations().create(
                 "refine_foreground_edges", true,
                 "subject_is_person", true
         ));
+```
+
+```csharp
+var task = await client.Apps.Generations.CreateAsync(
+    "video-background-remover",
+    new Dictionary<string, object?>
+    {
+        ["source_video"] = new[] { "https://example.com/source.mp4" },
+        ["refine_foreground_edges"] = true,
+        ["subject_is_person"] = true
+    });
+```
+
+```php
+$task = $client->apps()->generations()->create('video-background-remover', [
+    'source_video' => ['https://example.com/source.mp4'],
+    'refine_foreground_edges' => true,
+    'subject_is_person' => true,
+]);
 ```
 
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
@@ -389,6 +500,35 @@ try (BubleStream stream = client.chat().completions().stream(Map.of(
 }
 ```
 
+```csharp
+await foreach (var text in client.Chat.Completions.StreamTextAsync(new Dictionary<string, object?>
+{
+    ["model"] = "openai/gpt-5.5",
+    ["messages"] = new[]
+    {
+        new Dictionary<string, object?>
+        {
+            ["role"] = "user",
+            ["content"] = "Write a short launch summary."
+        }
+    }
+}))
+{
+    Console.Write(text);
+}
+```
+
+```php
+foreach ($client->chat()->completions()->streamText([
+    'model' => 'openai/gpt-5.5',
+    'messages' => [
+        ['role' => 'user', 'content' => 'Write a short launch summary.'],
+    ],
+]) as $text) {
+    echo $text;
+}
+```
+
 ## Repository Layout
 
 ```txt
@@ -405,6 +545,18 @@ try (BubleStream stream = client.chat().completions().stream(Map.of(
 ├── java/
 │   ├── src/
 │   ├── examples/
+│   └── docs/
+├── dotnet/
+│   ├── src/Buble.Sdk/
+│   ├── tests/Buble.Sdk.Tests/
+│   ├── examples/
+│   ├── tools/Buble.Sdk.LiveSmoke/
+│   └── docs/
+├── php/
+│   ├── src/
+│   ├── tests/
+│   ├── examples/
+│   ├── tools/
 │   └── docs/
 └── python/
     ├── src/buble_ai/
@@ -455,6 +607,26 @@ mvn -P release -Dgpg.skip=true verify
 
 Use the release profile without `-Dgpg.skip=true` only when GPG signing is configured and you are preparing a Maven Central release.
 
+.NET:
+
+```bash
+cd dotnet
+dotnet restore
+dotnet test -c Release
+dotnet pack src/Buble.Sdk/Buble.Sdk.csproj -c Release -o artifacts
+```
+
+PHP:
+
+```bash
+cd php
+composer validate --strict
+composer install
+composer test
+composer analyse
+composer cs
+```
+
 ## Java Publishing
 
 The Java SDK is published through Maven Central, not directly through MVNRepository. MVNRepository is an indexing site and will show `ai.buble:buble-sdk` after Maven Central publishes and indexes the artifact.
@@ -475,6 +647,50 @@ mvn -P release clean deploy
 
 The Java `pom.xml` uses `autoPublish=false`, so review the deployment in Central Portal before publishing it. Maven Central versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
 
+## .NET Publishing
+
+The .NET SDK is published directly to NuGet.org as `Buble.SDK`.
+
+Before the first .NET release:
+
+- Ensure the `Buble.SDK` package ID is available or owned by the Buble NuGet.org account.
+- Create a NuGet.org API key with permission to push `Buble.SDK`.
+- Run `dotnet test -c Release` and inspect the package with `dotnet pack`.
+
+Release command:
+
+```bash
+cd dotnet
+dotnet pack src/Buble.Sdk/Buble.Sdk.csproj -c Release -o artifacts
+dotnet nuget push artifacts/Buble.SDK.0.1.2.nupkg \
+  --api-key "$NUGET_API_KEY" \
+  --source https://api.nuget.org/v3/index.json
+```
+
+The project also produces `artifacts/Buble.SDK.0.1.2.snupkg`. If your NuGet client does not publish the symbol package together with the main package, push the `.snupkg` to the same source. NuGet package versions are immutable; after `0.1.2` is published, fixes must use a new version such as `0.1.3`.
+
+## PHP Publishing
+
+The PHP SDK is published to Packagist as `buble/sdk`.
+
+Because this repository is a multi-language monorepo, publish the PHP SDK through a PHP-only split repository whose root contains the contents of `php/`. Do not submit this monorepo root to Packagist.
+
+Release flow:
+
+```bash
+git subtree split --prefix=php -b php-release
+git push git@github.com:bublehq/php-sdk.git php-release:main --force-with-lease
+```
+
+In the PHP-only repository:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Submit `https://github.com/bublehq/php-sdk` to Packagist and configure the GitHub/Packagist hook so new tags are indexed automatically. Composer package versions are derived from Git tags; do not add a `version` field to `composer.json`.
+
 ## Live Smoke Tests
 
 Live smoke tests require `BUBLE_API_KEY`. They call discovery and error-handling paths and are intended to avoid creating billable generation tasks.
@@ -494,6 +710,16 @@ cd go
 BUBLE_API_KEY=sk_... go run ./cmd/live-smoke
 ```
 
+```bash
+cd dotnet
+BUBLE_API_KEY=sk_... dotnet run --project tools/Buble.Sdk.LiveSmoke -c Release
+```
+
+```bash
+cd php
+BUBLE_API_KEY=sk_... php tools/live-smoke.php
+```
+
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, and `java/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, and `php/LICENSE`.

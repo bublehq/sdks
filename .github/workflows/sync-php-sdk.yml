@@ -1,0 +1,70 @@
+name: Sync PHP SDK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "php/**"
+      - ".github/workflows/sync-php-sdk.yml"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Validate and sync php/
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: curl, json
+          coverage: none
+
+      - name: Install dependencies
+        working-directory: php
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Validate composer.json
+        working-directory: php
+        run: composer validate --strict
+
+      - name: Run tests
+        working-directory: php
+        run: composer test
+
+      - name: Run static analysis
+        working-directory: php
+        run: composer analyse
+
+      - name: Run coding standards
+        working-directory: php
+        run: composer cs
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.PHP_SDK_DEPLOY_KEY }}" > ~/.ssh/php_sdk_deploy_key
+          chmod 600 ~/.ssh/php_sdk_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/php_sdk_deploy_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Split php/ subtree
+        run: |
+          git subtree split --prefix=php -b php-sdk-main
+
+      - name: Push PHP SDK repository
+        run: |
+          git push git@github.com:bublehq/php-sdk.git php-sdk-main:main --force-with-lease

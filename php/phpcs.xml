@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ruleset name="Buble PHP SDK">
+  <rule ref="PSR12"/>
+  <file>src</file>
+  <file>tests</file>
+</ruleset>
