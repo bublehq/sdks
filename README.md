@@ -4,7 +4,7 @@ Official SDKs for the [Buble public API](https://buble.ai/docs).
 
 This repository contains the SDKs for calling Buble from server-side applications. The SDKs support media model discovery, file uploads, asynchronous image and video generation, preconfigured Buble app workflows, and chat model calls through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
 
-The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Swift, Dart/Flutter, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
+The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Swift, Dart/Flutter, Elixir, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
 
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
@@ -18,6 +18,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `buble` | `cargo add buble` | Rust 1.88+ | `rust/` | [Rust README](rust/README.md), [crates.io](https://crates.io/crates/buble), [docs.rs](https://docs.rs/buble) |
 | `Buble` | Swift Package dependency | Swift 5.9+ | `swift/` | [Swift README](swift/README.md), [Swift package repo](https://github.com/bublehq/swift-sdk) after sync, [Swift Package Index](https://swiftpackageindex.com/bublehq/swift-sdk) |
 | `buble` | `dart pub add buble` / `flutter pub add buble` | Dart 3.4+ / Flutter | `flutter/` | [Flutter README](flutter/README.md), [pub.dev](https://pub.dev/packages/buble) after publication |
+| `buble` | `{:buble, "~> 0.1.0"}` | Elixir 1.15+ | `elixir/` | [Elixir README](elixir/README.md), [Hex.pm](https://hex.pm/packages/buble) after publication, [HexDocs](https://hexdocs.pm/buble) |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
 | `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ with `ext-curl` and `ext-json` | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
@@ -262,6 +263,38 @@ Future<void> main() async {
 
 The Flutter SDK is implemented as a pure Dart package, so it can be used from Flutter apps, Dart CLI tools, and server-side Dart without platform plugin setup. It also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted on Dart IO platforms. For production Flutter apps, keep API keys on your server and call Buble through your own backend.
 
+### Elixir
+
+Install after publication to Hex.pm:
+
+```elixir
+def deps do
+  [
+    {:buble, "~> 0.1.0"}
+  ]
+end
+```
+
+Quick start:
+
+```elixir
+client = Buble.Client.new!()
+
+{:ok, task} =
+  Buble.Generations.create(client, %{
+    model: "google/nano-banana",
+    mode: "text_to_image",
+    prompt: "A cinematic product photo of a matte black espresso cup",
+    aspect_ratio: "1:1",
+    output_format: "png"
+  })
+
+{:ok, result} = Buble.Generations.wait(client, task["data"]["id"])
+IO.puts(result["data"]["result"]["images"] |> List.first() |> Map.fetch!("url"))
+```
+
+The Elixir SDK exposes the `Buble` namespace, returns `{:ok, value}` / `{:error, %Buble.Error{}}` from non-bang functions, and also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. API documentation is available on [HexDocs](https://hexdocs.pm/buble) after publication.
+
 ### Java
 
 Install with Maven:
@@ -452,6 +485,7 @@ Use the discovery endpoints as the source of truth:
 - Ruby equivalents are `client.media_models.list(...)`, `client.apps.list`, `client.apps.retrieve(...)`, and `client.chat.models.list`.
 - Swift equivalents are `client.mediaModels.list(...)`, `client.apps.list()`, `client.apps.retrieve(...)`, and `client.chat.models.list()`.
 - Dart equivalents are `client.mediaModels.list(...)`, `client.apps.list(...)`, `client.apps.retrieve(...)`, and `client.chat.models.list()`.
+- Elixir equivalents are `Buble.MediaModels.list(client, ...)`, `Buble.Apps.list(client)`, `Buble.Apps.retrieve(client, ...)`, and `Buble.Chat.Models.list(client)`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -828,6 +862,10 @@ await for (final text in stream) {
 │   ├── test/
 │   ├── example/
 │   └── tool/
+├── elixir/
+│   ├── lib/
+│   ├── test/
+│   └── examples/
 ├── java/
 │   ├── src/
 │   ├── examples/
@@ -917,6 +955,18 @@ dart format --set-exit-if-changed .
 dart analyze --fatal-infos
 dart test
 dart pub publish --dry-run
+```
+
+Elixir:
+
+```bash
+cd elixir
+mix deps.get
+mix format --check-formatted
+mix compile --warnings-as-errors
+mix test
+mix docs
+mix hex.build
 ```
 
 Java:
@@ -1079,6 +1129,51 @@ git push origin flutter-v0.1.1
 
 The workflow verifies that `flutter/pubspec.yaml` has the matching version, runs formatting, analyzer, tests, and publishes with `dart pub publish --force` using GitHub OIDC. pub.dev versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
 
+## Elixir Publishing
+
+The Elixir SDK is published directly to Hex.pm as `buble`. HexDocs builds the API documentation automatically after Hex.pm publication.
+
+Package links:
+
+- Hex.pm: `https://hex.pm/packages/buble`
+- HexDocs: `https://hexdocs.pm/buble`
+
+Before the first release:
+
+- Confirm the package name `buble` is still available or owned by the Buble Hex.pm account.
+- Create or sign in to the Hex.pm account that should own the first upload.
+- Generate a Hex API key with package publish permission and save it as the GitHub Actions secret `HEX_API_KEY`.
+- Run formatting, compile, tests, docs, and `mix hex.build`. Use `mix hex.publish --dry-run` after authenticating with Hex.pm for a publish-equivalent local check.
+
+Local verification:
+
+```bash
+cd elixir
+mix local.hex --force
+mix deps.get
+mix format --check-formatted
+mix compile --warnings-as-errors
+mix test
+mix docs
+mix hex.build
+```
+
+Manual release from the package directory:
+
+```bash
+cd elixir
+mix hex.publish
+```
+
+Publish through the release workflow with an Elixir-specific monorepo tag:
+
+```bash
+git tag elixir-v0.1.0
+git push origin elixir-v0.1.0
+```
+
+The workflow verifies that `elixir/mix.exs` has the matching version, runs formatting, compile, tests, docs, a dry-run publish, and publishes with `HEX_API_KEY`. Hex package versions are immutable for normal release workflows; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
+
 ## Java Publishing
 
 The Java SDK is published through Maven Central, not directly through MVNRepository. MVNRepository is an indexing site and will show `ai.buble:buble-sdk` after Maven Central publishes and indexes the artifact.
@@ -1238,4 +1333,4 @@ BUBLE_API_KEY=sk_... ruby -Ilib tools/live_smoke.rb
 
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `swift/LICENSE`, `flutter/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `swift/LICENSE`, `flutter/LICENSE`, `elixir/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.
