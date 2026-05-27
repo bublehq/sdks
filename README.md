@@ -16,7 +16,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md), [PyPI](https://pypi.org/project/buble-ai/) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `buble` | `cargo add buble` | Rust 1.88+ | `rust/` | [Rust README](rust/README.md), [crates.io](https://crates.io/crates/buble), [docs.rs](https://docs.rs/buble) |
-| `Buble` | Swift Package dependency | Swift 5.9+ | `swift/` | [Swift README](swift/README.md), [Swift package repo](https://github.com/bublehq/swift-sdk) after sync |
+| `Buble` | Swift Package dependency | Swift 5.9+ | `swift/` | [Swift README](swift/README.md), [Swift package repo](https://github.com/bublehq/swift-sdk) after sync, [Swift Package Index](https://swiftpackageindex.com/bublehq/swift-sdk) |
 | `buble` | `dart pub add buble` / `flutter pub add buble` | Dart 3.4+ / Flutter | `flutter/` | [Flutter README](flutter/README.md), [pub.dev](https://pub.dev/packages/buble) after publication |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
@@ -260,7 +260,7 @@ Future<void> main() async {
 }
 ```
 
-The Dart SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted on Dart IO platforms. For production Flutter apps, keep API keys on your server and call Buble through your own backend.
+The Flutter SDK is implemented as a pure Dart package, so it can be used from Flutter apps, Dart CLI tools, and server-side Dart without platform plugin setup. It also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted on Dart IO platforms. For production Flutter apps, keep API keys on your server and call Buble through your own backend.
 
 ### Java
 
