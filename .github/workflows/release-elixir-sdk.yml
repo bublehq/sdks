@@ -49,7 +49,9 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          MIX_VERSION="$(mix run -e 'IO.write(Mix.Project.config()[:version])')"
+          MIX_VERSION="$(mix run --no-compile --no-deps-check --no-start -e 'IO.write(Mix.Project.config()[:version])')"
+          echo "Release version: $RELEASE_VERSION"
+          echo "mix.exs version: $MIX_VERSION"
           test "$MIX_VERSION" = "$RELEASE_VERSION"
 
       - name: Check formatting
