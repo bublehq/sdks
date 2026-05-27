@@ -1,0 +1,64 @@
+name: Release Flutter SDK
+
+on:
+  push:
+    tags:
+      - "flutter-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 0.1.0"
+        required: true
+
+jobs:
+  publish:
+    name: Publish to pub.dev
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#flutter-v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Invalid Flutter SDK version: $VERSION" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify pubspec version
+        working-directory: flutter
+        run: |
+          grep -q "^version: ${{ steps.version.outputs.version }}$" pubspec.yaml
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        working-directory: flutter
+        run: dart pub get
+
+      - name: Check formatting
+        working-directory: flutter
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: flutter
+        run: dart analyze --fatal-infos
+
+      - name: Run tests
+        working-directory: flutter
+        run: dart test
+
+      - name: Publish
+        working-directory: flutter
+        run: dart pub publish --force

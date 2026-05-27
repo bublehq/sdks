@@ -1,0 +1,44 @@
+name: Flutter SDK CI
+
+on:
+  push:
+    paths:
+      - "flutter/**"
+      - ".github/workflows/flutter-sdk-ci.yml"
+  pull_request:
+    paths:
+      - "flutter/**"
+      - ".github/workflows/flutter-sdk-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Dart and Flutter SDK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        working-directory: flutter
+        run: dart pub get
+
+      - name: Check formatting
+        working-directory: flutter
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: flutter
+        run: dart analyze --fatal-infos
+
+      - name: Run tests
+        working-directory: flutter
+        run: dart test
+
+      - name: Publish dry run
+        working-directory: flutter
+        run: dart pub publish --dry-run

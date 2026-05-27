@@ -1,0 +1,34 @@
+name: buble
+description: Official Dart and Flutter SDK for the Buble public API, including chat, file uploads, image generation, video generation, and app workflows.
+version: 0.1.1
+homepage: https://buble.ai/
+documentation: https://buble.ai/docs
+repository: https://github.com/bublehq/sdks/tree/main/flutter
+issue_tracker: https://github.com/bublehq/sdks/issues
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  http: ^1.2.0
+  http_parser: ^4.0.2
+  meta: ^1.12.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
+
+topics:
+  - ai
+  - chat
+  - image-generation
+  - video-generation
+  - sdk

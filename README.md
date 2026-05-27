@@ -4,7 +4,7 @@ Official SDKs for the [Buble public API](https://buble.ai/docs).
 
 This repository contains the SDKs for calling Buble from server-side applications. The SDKs support media model discovery, file uploads, asynchronous image and video generation, preconfigured Buble app workflows, and chat model calls through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
 
-The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Swift, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
+The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Swift, Dart/Flutter, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
 
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
@@ -17,6 +17,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `buble` | `cargo add buble` | Rust 1.88+ | `rust/` | [Rust README](rust/README.md), [crates.io](https://crates.io/crates/buble), [docs.rs](https://docs.rs/buble) |
 | `Buble` | Swift Package dependency | Swift 5.9+ | `swift/` | [Swift README](swift/README.md), [Swift package repo](https://github.com/bublehq/swift-sdk) after sync |
+| `buble` | `dart pub add buble` / `flutter pub add buble` | Dart 3.4+ / Flutter | `flutter/` | [Flutter README](flutter/README.md), [pub.dev](https://pub.dev/packages/buble) after publication |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
 | `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ with `ext-curl` and `ext-json` | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
@@ -224,6 +225,43 @@ print(result.data.result?.images?.first?.url.absoluteString ?? "")
 
 The Swift SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It uses Foundation and `URLSession` only, with no third-party runtime dependencies. Swift Package Manager consumes the Swift-only repository `https://github.com/bublehq/swift-sdk`, whose root is the contents of `swift/`.
 
+### Dart / Flutter
+
+Install after publication to pub.dev:
+
+```bash
+dart pub add buble
+```
+
+For Flutter projects:
+
+```bash
+flutter pub add buble
+```
+
+Quick start:
+
+```dart
+import 'package:buble/buble.dart';
+
+Future<void> main() async {
+  final client = BubleClient.fromEnvironment();
+
+  final task = await client.generations.create(
+    CreateGenerationRequest(
+      model: 'google/nano-banana',
+      mode: 'text_to_image',
+      prompt: 'A cinematic product photo of a matte black espresso cup',
+    ).withParam('aspect_ratio', '1:1').withParam('output_format', 'png'),
+  );
+
+  final result = await client.generations.wait(task.data.id);
+  print(result.data.result?.images.firstOrNull?.url);
+}
+```
+
+The Dart SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted on Dart IO platforms. For production Flutter apps, keep API keys on your server and call Buble through your own backend.
+
 ### Java
 
 Install with Maven:
@@ -413,6 +451,7 @@ Use the discovery endpoints as the source of truth:
 - PHP equivalents are `$client->mediaModels()->list(...)`, `$client->apps()->list()`, `$client->apps()->retrieve(...)`, and `$client->chat()->models()->list()`.
 - Ruby equivalents are `client.media_models.list(...)`, `client.apps.list`, `client.apps.retrieve(...)`, and `client.chat.models.list`.
 - Swift equivalents are `client.mediaModels.list(...)`, `client.apps.list()`, `client.apps.retrieve(...)`, and `client.chat.models.list()`.
+- Dart equivalents are `client.mediaModels.list(...)`, `client.apps.list(...)`, `client.apps.retrieve(...)`, and `client.chat.models.list()`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -455,6 +494,10 @@ models = client.media_models.list(media_type: "video")
 
 ```swift
 let models = try await client.mediaModels.list(mediaType: "video")
+```
+
+```dart
+final models = await client.mediaModels.list(mediaType: 'video');
 ```
 
 The response contains model keys, supported modes, required inputs, and accepted parameters.
@@ -537,6 +580,17 @@ let uploaded = try await client.files.upload(
 )
 ```
 
+```dart
+final uploaded = await client.files.upload(
+  FileUpload.fromPath('reference.png', contentType: 'image/png'),
+  options: const UploadOptions(
+    fileType: 'image',
+    model: 'google/nano-banana',
+    mode: 'image_to_image',
+  ),
+);
+```
+
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
 
 ### Run App Workflows
@@ -614,6 +668,14 @@ let task = try await client.apps.generations.create("video-background-remover", 
     "refine_foreground_edges": true,
     "subject_is_person": true
 ])
+```
+
+```dart
+final task = await client.apps.generations.create('video-background-remover', {
+  'source_video': ['https://example.com/source.mp4'],
+  'refine_foreground_edges': true,
+  'subject_is_person': true,
+});
 ```
 
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
@@ -725,6 +787,19 @@ for try await text in stream {
 }
 ```
 
+```dart
+final stream = await client.chat.completions.streamText({
+  'model': 'openai/gpt-5.5',
+  'messages': [
+    {'role': 'user', 'content': 'Write a short launch summary.'},
+  ],
+});
+
+await for (final text in stream) {
+  print(text);
+}
+```
+
 ## Repository Layout
 
 ```txt
@@ -748,6 +823,11 @@ for try await text in stream {
 │   ├── Tests/BubleTests/
 │   ├── Examples/
 │   └── docs/
+├── flutter/
+│   ├── lib/
+│   ├── test/
+│   ├── example/
+│   └── tool/
 ├── java/
 │   ├── src/
 │   ├── examples/
@@ -826,6 +906,17 @@ cd swift
 swift package dump-package
 swift build
 swift test
+```
+
+Dart / Flutter:
+
+```bash
+cd flutter
+dart pub get
+dart format --set-exit-if-changed .
+dart analyze --fatal-infos
+dart test
+dart pub publish --dry-run
 ```
 
 Java:
@@ -939,6 +1030,54 @@ git push origin swift-v0.1.0
 ```
 
 The workflow validates the package, syncs `swift/` to `bublehq/swift-sdk`, and pushes the Swift Package Manager version tag `0.1.0` to the Swift-only repository. Swift package versions are Git tags; after `0.1.0` is published, fixes should use a new version such as `0.1.1`.
+
+## Dart / Flutter Publishing
+
+The Dart and Flutter SDK is published to pub.dev as `buble`.
+
+Package link:
+
+- pub.dev: `https://pub.dev/packages/buble`
+
+Before the first release:
+
+- Confirm the package name `buble` is still available on pub.dev.
+- Sign in with the Google account that should own the first upload.
+- If Buble has a verified pub.dev publisher, publish or transfer the package under that publisher.
+- Run formatting, analyzer, tests, and `dart pub publish --dry-run`.
+
+Local verification:
+
+```bash
+cd flutter
+dart pub get
+dart format --set-exit-if-changed .
+dart analyze --fatal-infos
+dart test
+dart pub publish --dry-run
+```
+
+The first pub.dev release must be published manually from the package directory:
+
+```bash
+cd flutter
+dart pub login
+dart pub publish
+```
+
+After the first version exists on pub.dev, configure automated publishing from the package admin page:
+
+- Repository: `bublehq/sdks`
+- Tag pattern: `flutter-v{{version}}`
+
+Then publish future versions through the release workflow with a Flutter-specific monorepo tag:
+
+```bash
+git tag flutter-v0.1.1
+git push origin flutter-v0.1.1
+```
+
+The workflow verifies that `flutter/pubspec.yaml` has the matching version, runs formatting, analyzer, tests, and publishes with `dart pub publish --force` using GitHub OIDC. pub.dev versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
 
 ## Java Publishing
 
@@ -1078,6 +1217,11 @@ BUBLE_API_KEY=sk_... swift run BubleLiveSmoke
 ```
 
 ```bash
+cd flutter
+BUBLE_API_KEY=sk_... dart run tool/live_smoke.dart
+```
+
+```bash
 cd dotnet
 BUBLE_API_KEY=sk_... dotnet run --project tools/Buble.Sdk.LiveSmoke -c Release
 ```
@@ -1094,4 +1238,4 @@ BUBLE_API_KEY=sk_... ruby -Ilib tools/live_smoke.rb
 
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `swift/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `swift/LICENSE`, `flutter/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.
