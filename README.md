@@ -4,7 +4,7 @@ Official SDKs for the [Buble public API](https://buble.ai/docs).
 
 This repository contains the SDKs for calling Buble from server-side applications. The SDKs support media model discovery, file uploads, asynchronous image and video generation, preconfigured Buble app workflows, and chat model calls through OpenAI, Anthropic Messages, and Gemini-compatible API formats.
 
-The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
+The SDKs share the same API model across JavaScript/TypeScript, Python, Go, Rust, Swift, Java, .NET, PHP, and Ruby: discover capabilities from Buble, create generation tasks with the public flat request shape, poll asynchronous tasks until completion, and preserve protocol-native chat responses.
 
 Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-side code.
 
@@ -16,6 +16,7 @@ Keep API keys on the server. Do not expose `BUBLE_API_KEY` in browser or client-
 | `buble-ai` | `pip install buble-ai` | Python 3.9+ | `python/` | [Python README](python/README.md), [PyPI](https://pypi.org/project/buble-ai/) |
 | `github.com/bublehq/sdks/go` | `go get github.com/bublehq/sdks/go` | Go 1.22+ | `go/` | [Go README](go/README.md), [pkg.go.dev](https://pkg.go.dev/github.com/bublehq/sdks/go) |
 | `buble` | `cargo add buble` | Rust 1.88+ | `rust/` | [Rust README](rust/README.md), [crates.io](https://crates.io/crates/buble), [docs.rs](https://docs.rs/buble) |
+| `Buble` | Swift Package dependency | Swift 5.9+ | `swift/` | [Swift README](swift/README.md), [Swift package repo](https://github.com/bublehq/swift-sdk) after sync |
 | `ai.buble:buble-sdk` | Maven / Gradle dependency | Java 11+ | `java/` | [Java README](java/README.md), [Maven Central](https://central.sonatype.com/artifact/ai.buble/buble-sdk) after publication |
 | `Buble.SDK` | `dotnet add package Buble.SDK` | .NET Standard 2.0 / .NET 8+ | `dotnet/` | [.NET README](dotnet/README.md), [NuGet.org](https://www.nuget.org/packages/Buble.SDK) |
 | `buble/sdk` | `composer require buble/sdk` | PHP 8.2+ with `ext-curl` and `ext-json` | `php/` | [PHP README](php/README.md), [Packagist](https://packagist.org/packages/buble/sdk) after publication |
@@ -187,6 +188,41 @@ async fn main() -> buble::Result<()> {
 ```
 
 The Rust SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. API documentation is available on [docs.rs](https://docs.rs/buble), and the crate is published on [crates.io](https://crates.io/crates/buble).
+
+### Swift
+
+Add the Swift package after the Swift-only repository has been synced and tagged:
+
+```swift
+.package(url: "https://github.com/bublehq/swift-sdk.git", from: "0.1.0")
+```
+
+Add the product to your target:
+
+```swift
+.product(name: "Buble", package: "swift-sdk")
+```
+
+Quick start:
+
+```swift
+import Buble
+
+let client = try BubleClient.fromEnvironment()
+
+let task = try await client.generations.create(
+    try CreateGenerationRequest(model: "google/nano-banana")
+        .mode("text_to_image")
+        .prompt("A cinematic product photo of a matte black espresso cup")
+        .param("aspect_ratio", "1:1")
+        .param("output_format", "png")
+)
+
+let result = try await client.generations.wait(task.data.id)
+print(result.data.result?.images?.first?.url.absoluteString ?? "")
+```
+
+The Swift SDK also reads `BUBLE_API_KEY` and `BUBLE_BASE_URL` from the environment when omitted. It uses Foundation and `URLSession` only, with no third-party runtime dependencies. Swift Package Manager consumes the Swift-only repository `https://github.com/bublehq/swift-sdk`, whose root is the contents of `swift/`.
 
 ### Java
 
@@ -376,6 +412,7 @@ Use the discovery endpoints as the source of truth:
 - .NET equivalents are `client.MediaModels.ListAsync(...)`, `client.Apps.ListAsync()`, `client.Apps.RetrieveAsync(...)`, and `client.Chat.Models.ListAsync()`.
 - PHP equivalents are `$client->mediaModels()->list(...)`, `$client->apps()->list()`, `$client->apps()->retrieve(...)`, and `$client->chat()->models()->list()`.
 - Ruby equivalents are `client.media_models.list(...)`, `client.apps.list`, `client.apps.retrieve(...)`, and `client.chat.models.list`.
+- Swift equivalents are `client.mediaModels.list(...)`, `client.apps.list()`, `client.apps.retrieve(...)`, and `client.chat.models.list()`.
 
 The SDKs preserve protocol-native chat response shapes. OpenAI-compatible, Anthropic-compatible, and Gemini-compatible responses are not globally wrapped or transformed.
 
@@ -414,6 +451,10 @@ $models = $client->mediaModels()->list(mediaType: 'video');
 
 ```ruby
 models = client.media_models.list(media_type: "video")
+```
+
+```swift
+let models = try await client.mediaModels.list(mediaType: "video")
 ```
 
 The response contains model keys, supported modes, required inputs, and accepted parameters.
@@ -489,6 +530,13 @@ uploaded = client.files.upload(
 )
 ```
 
+```swift
+let uploaded = try await client.files.upload(
+    .fromFileURL(URL(fileURLWithPath: "reference.png"), contentType: "image/png"),
+    options: UploadOptions(fileType: "image", model: "google/nano-banana", mode: "image_to_image")
+)
+```
+
 Pass the returned URL into fields such as `image_urls`, `start_frame`, `end_frame`, `video_urls`, or `audio_urls`.
 
 ### Run App Workflows
@@ -558,6 +606,14 @@ task = client.apps.generations.create("video-background-remover", {
   "refine_foreground_edges" => true,
   "subject_is_person" => true
 })
+```
+
+```swift
+let task = try await client.apps.generations.create("video-background-remover", body: [
+    "source_video": ["https://example.com/source.mp4"],
+    "refine_foreground_edges": true,
+    "subject_is_person": true
+])
 ```
 
 Only send input parameter names returned by `apps.list()` or `apps.retrieve()`.
@@ -656,6 +712,19 @@ client.chat.completions.stream_text(
 end
 ```
 
+```swift
+let stream = try await client.chat.completions.streamText([
+    "model": "openai/gpt-5.5",
+    "messages": [
+        ["role": "user", "content": "Write a short launch summary."]
+    ]
+])
+
+for try await text in stream {
+    print(text, terminator: "")
+}
+```
+
 ## Repository Layout
 
 ```txt
@@ -673,6 +742,11 @@ end
 │   ├── src/
 │   ├── tests/
 │   ├── examples/
+│   └── docs/
+├── swift/
+│   ├── Sources/Buble/
+│   ├── Tests/BubleTests/
+│   ├── Examples/
 │   └── docs/
 ├── java/
 │   ├── src/
@@ -743,6 +817,15 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 cargo package
+```
+
+Swift:
+
+```bash
+cd swift
+swift package dump-package
+swift build
+swift test
 ```
 
 Java:
@@ -821,6 +904,41 @@ git push origin rust-v0.1.0
 ```
 
 The workflow verifies that `Cargo.toml` has the matching package version, runs the same checks, performs a dry run, then publishes with `cargo publish`. crates.io versions are immutable; after `0.1.0` is published, fixes must use a new version such as `0.1.1`.
+
+## Swift Publishing
+
+The Swift SDK is published through Swift Package Manager by tagging a Swift-only Git repository. There is no central Swift Package Manager upload step.
+
+Package repository:
+
+- Swift Package: `https://github.com/bublehq/swift-sdk`
+
+Because this repository is a multi-language monorepo, Swift consumers should use the Swift-only split repository whose root contains `Package.swift`, `Sources/`, `Tests/`, `Examples/`, `README.md`, and `LICENSE`. Do not point Swift Package Manager consumers at this monorepo root.
+
+Before the first Swift release:
+
+- Create or verify the Swift-only repository `https://github.com/bublehq/swift-sdk`.
+- Add a deploy key with write access to that repository.
+- Store the private deploy key in this monorepo as the GitHub Actions secret `SWIFT_SDK_DEPLOY_KEY`.
+- Confirm the sync workflow can push `swift/` to the Swift-only repository root.
+
+Local verification:
+
+```bash
+cd swift
+swift package dump-package
+swift build
+swift test
+```
+
+Publish through the release workflow with a Swift-specific monorepo tag:
+
+```bash
+git tag swift-v0.1.0
+git push origin swift-v0.1.0
+```
+
+The workflow validates the package, syncs `swift/` to `bublehq/swift-sdk`, and pushes the Swift Package Manager version tag `0.1.0` to the Swift-only repository. Swift package versions are Git tags; after `0.1.0` is published, fixes should use a new version such as `0.1.1`.
 
 ## Java Publishing
 
@@ -955,6 +1073,11 @@ BUBLE_API_KEY=sk_... cargo run --example live_smoke
 ```
 
 ```bash
+cd swift
+BUBLE_API_KEY=sk_... swift run BubleLiveSmoke
+```
+
+```bash
 cd dotnet
 BUBLE_API_KEY=sk_... dotnet run --project tools/Buble.Sdk.LiveSmoke -c Release
 ```
@@ -971,4 +1094,4 @@ BUBLE_API_KEY=sk_... ruby -Ilib tools/live_smoke.rb
 
 ## License
 
-MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.
+MIT. See the package-specific license files in `npm/LICENSE`, `python/LICENSE`, `go/LICENSE`, `rust/LICENSE`, `swift/LICENSE`, `java/LICENSE`, `dotnet/LICENSE`, `php/LICENSE`, and `ruby/LICENSE`.

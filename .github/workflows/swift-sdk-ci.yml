@@ -1,0 +1,33 @@
+name: Swift SDK CI
+
+on:
+  push:
+    paths:
+      - "swift/**"
+      - ".github/workflows/swift-sdk-ci.yml"
+  pull_request:
+    paths:
+      - "swift/**"
+      - ".github/workflows/swift-sdk-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Swift SDK
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+
+      - name: Dump package manifest
+        working-directory: swift
+        run: swift package dump-package
+
+      - name: Build package
+        working-directory: swift
+        run: swift build
+
+      - name: Run tests
+        working-directory: swift
+        run: swift test

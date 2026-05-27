@@ -1,0 +1,74 @@
+name: Sync Swift SDK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "swift/**"
+      - ".github/workflows/sync-swift-sdk.yml"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Validate and sync swift/
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Dump package manifest
+        working-directory: swift
+        run: swift package dump-package
+
+      - name: Build package
+        working-directory: swift
+        run: swift build
+
+      - name: Run tests
+        working-directory: swift
+        run: swift test
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SWIFT_SDK_DEPLOY_KEY }}" > ~/.ssh/swift_sdk_deploy_key
+          chmod 600 ~/.ssh/swift_sdk_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/swift_sdk_deploy_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Split swift/ subtree
+        run: |
+          git subtree split --prefix=swift -b swift-sdk-main
+
+      - name: Fetch Swift SDK remote
+        run: |
+          git remote add swift-sdk git@github.com:bublehq/swift-sdk.git
+          set +e
+          git ls-remote --exit-code --heads swift-sdk main >/dev/null
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch swift-sdk main
+          elif [ "$status" -eq 2 ]; then
+            echo "Swift SDK remote main branch does not exist yet."
+          else
+            exit "$status"
+          fi
+
+      - name: Push Swift SDK repository
+        run: |
+          if git show-ref --verify --quiet refs/remotes/swift-sdk/main; then
+            git push swift-sdk swift-sdk-main:main --force-with-lease=refs/heads/main:refs/remotes/swift-sdk/main
+          else
+            git push swift-sdk swift-sdk-main:main
+          fi

@@ -1,0 +1,105 @@
+name: Release Swift SDK
+
+on:
+  push:
+    tags:
+      - "swift-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, for example 0.1.0"
+        required: true
+
+jobs:
+  release:
+    name: Validate, sync, and tag Swift SDK
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#swift-v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Invalid Swift package version: $VERSION" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Dump package manifest
+        working-directory: swift
+        run: swift package dump-package
+
+      - name: Build package
+        working-directory: swift
+        run: swift build
+
+      - name: Run tests
+        working-directory: swift
+        run: swift test
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SWIFT_SDK_DEPLOY_KEY }}" > ~/.ssh/swift_sdk_deploy_key
+          chmod 600 ~/.ssh/swift_sdk_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/swift_sdk_deploy_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Split swift/ subtree
+        run: |
+          git subtree split --prefix=swift -b swift-sdk-release
+
+      - name: Fetch Swift SDK remote
+        run: |
+          git remote add swift-sdk git@github.com:bublehq/swift-sdk.git
+          set +e
+          git ls-remote --exit-code --heads swift-sdk main >/dev/null
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch swift-sdk main
+          elif [ "$status" -eq 2 ]; then
+            echo "Swift SDK remote main branch does not exist yet."
+          else
+            exit "$status"
+          fi
+
+      - name: Push Swift SDK main
+        run: |
+          if git show-ref --verify --quiet refs/remotes/swift-sdk/main; then
+            git push swift-sdk swift-sdk-release:main --force-with-lease=refs/heads/main:refs/remotes/swift-sdk/main
+          else
+            git push swift-sdk swift-sdk-release:main
+          fi
+
+      - name: Push Swift SDK version tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          set +e
+          git ls-remote --exit-code --tags swift-sdk "refs/tags/$VERSION" >/dev/null 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Swift SDK tag $VERSION already exists in bublehq/swift-sdk. Publish a new version instead." >&2
+            exit 1
+          elif [ "$status" -ne 2 ]; then
+            exit "$status"
+          fi
+          git tag "$VERSION" swift-sdk-release
+          git push swift-sdk "refs/tags/$VERSION:refs/tags/$VERSION"
